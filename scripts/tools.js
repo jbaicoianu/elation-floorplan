@@ -71,12 +71,12 @@ console.log('detach pointer');
     var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
 
     if (ev.button == 0) {
-      var closest = floorplan.getclosestwall(realpos, 1);
+      var closest = floorplan.getclosestobject(realpos, 1);
       if (closest) {
         // select single object
       } else {
         // selection box
-        floorplan.drawing = new elation.floorplan.selector({start: realpos});
+        floorplan.drawing = new elation.floorplan.things.selector({start: realpos});
       }
       floorplan.setdirty();
     }
@@ -104,7 +104,7 @@ console.log('detach pointer');
       }
       floorplan.setdirty();
     } else {
-      var closest = floorplan.getclosestwall(realpos, 1);
+      var closest = floorplan.getclosestobject(realpos, 1);
       if (closest) {
         elation.html.addclass(floorplan.canvas, 'state_grabbable');
         closest[0].sethover(true);
@@ -128,7 +128,7 @@ console.log('detach pointer');
       floorplan.drawing = false;
       floorplan.setdirty();
     } else {
-      var closest = floorplan.getclosestwall(realpos, 1);
+      var closest = floorplan.getclosestobject(realpos, 1);
       if (closest) {
         closest[0].setselected(true);
         floorplan.setdirty();
@@ -156,7 +156,7 @@ elation.extend("floorplan.tools.wall", function() {
     var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
 
     if (ev.button == 0) {
-      floorplan.drawing = new elation.floorplan.wall({start: realpos});
+      floorplan.drawing = new elation.floorplan.things.wall({start: realpos});
     }
   }
   this.mousemove = function(ev) {
@@ -180,7 +180,7 @@ elation.extend("floorplan.tools.wall", function() {
 
     if (floorplan.drawing) {
       if (floorplan.drawing.length() > 0) {
-        floorplan.walls.push(floorplan.drawing);
+        floorplan.objects.push(floorplan.drawing);
       }
       floorplan.drawing = false;
       floorplan.setdirty();
@@ -216,10 +216,10 @@ elation.extend("floorplan.tools.door", function() {
     var mousepos = [ev.clientX, ev.clientY];
     var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
 
-    if (!floorplan.drawing || !(floorplan.drawing instanceof elation.floorplan[floorplan.currenttool])) {
-      floorplan.drawing = new elation.floorplan[floorplan.currenttool]({position: realpos});
+    if (!floorplan.drawing || !(floorplan.drawing instanceof elation.floorplan.things[floorplan.currenttool])) {
+      floorplan.drawing = new elation.floorplan.things[floorplan.currenttool]({position: realpos});
     }
-    var closest = floorplan.getclosestwall(realpos, (floorplan.currenttool == 'door' ? 2 : 1));
+    var closest = floorplan.getclosestobject(realpos, (floorplan.currenttool == 'door' ? 2 : 1));
     if (closest) {
       floorplan.drawing.enable();
       floorplan.drawing.setwallposition(closest[0], closest[1], closest[2]);
@@ -238,7 +238,7 @@ elation.extend("floorplan.tools.door", function() {
     var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
 
     if (floorplan.drawing && floorplan.drawing.enabled) {
-      floorplan.doors.push(floorplan.drawing);
+      floorplan.objects.push(floorplan.drawing);
       floorplan.drawing = false;
       floorplan.setdirty();
       floorplan.savestate();
@@ -272,11 +272,10 @@ elation.extend("floorplan.tools.window", function() {
     var mousepos = [ev.clientX, ev.clientY];
     var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
 
-console.log(floorplan.currenttool);
-    if (!floorplan.drawing || !(floorplan.drawing instanceof elation.floorplan[floorplan.currenttool])) {
-      floorplan.drawing = new elation.floorplan[floorplan.currenttool]({position: realpos});
+    if (!floorplan.drawing || !(floorplan.drawing instanceof elation.floorplan.things[floorplan.currenttool])) {
+      floorplan.drawing = new elation.floorplan.things[floorplan.currenttool]({position: realpos});
     }
-    var closest = floorplan.getclosestwall(realpos, (floorplan.currenttool == 'door' ? 2 : 1));
+    var closest = floorplan.getclosestobject(realpos, (floorplan.currenttool == 'door' ? 2 : 1));
     if (closest) {
       floorplan.drawing.enable();
       floorplan.drawing.setwallposition(closest[0], closest[1], closest[2]);
@@ -295,7 +294,7 @@ console.log(floorplan.currenttool);
     var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
 
     if (floorplan.drawing && floorplan.drawing.enabled) {
-      floorplan.windows.push(floorplan.drawing);
+      floorplan.objects.push(floorplan.drawing);
       floorplan.drawing = false;
       floorplan.setdirty();
       floorplan.savestate();
