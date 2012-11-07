@@ -1,5 +1,6 @@
 elation.component.add('floorplan', function() {
   this.offset = [0,0];
+  this.tools = {};
   this.walls = [];
   this.doors = [];
   this.windows = [];
@@ -66,6 +67,11 @@ elation.component.add('floorplan', function() {
     this.addtool('window');
 
     this.settool('pointer');
+
+    // drag is always active
+    this.addtool('drag', true);
+    this.tools['drag'].attach(this);
+    
   }
   this.serialize = function(asobj) {
     var data = {}; 
@@ -124,9 +130,6 @@ elation.component.add('floorplan', function() {
     if (this.currentstate > 0) {
       this.loadstate(this.statehistory[--this.currentstate]);
     }
-  }
-  this.addtool = function(name) {
-    this.toolbox.addtool(name, elation.bind(this, function() { this.settool(name); }));
   }
   this.drawgrid = function() {
     var ctx = this.ctx;
@@ -275,12 +278,24 @@ elation.component.add('floorplan', function() {
     }
     return false;
   }
+  this.addtool = function(name, invisible) {
+    if (!invisible) {
+      this.toolbox.addtool(name, elation.bind(this, function() { this.settool(name); }));
+    }
+    if (typeof elation.floorplan.tools[name] == 'function') {
+      this.tools[name] = new elation.floorplan.tools[name]();
+    }
+  }
   this.settool = function(toolname) {
+    if (this.tools[this.currenttool]) {
+      this.tools[this.currenttool].detach();
+    }
     this.currenttool = toolname;
     for (var k in this.toolbox.tools) {
       var tool = this.toolbox.tools[k];
       tool.component.setActive(k == toolname);
     }
+    this.tools[toolname].attach(this);
     this.drawing = false
     this.dirty = true;
     this.render();
@@ -342,157 +357,6 @@ elation.component.add('floorplan', function() {
   this.cleargroup = function(group) {
   }
   this.ingroup = function(group, object) {
-  }
-  this.mousedown = function(ev) {
-    var mousepos = [ev.clientX, ev.clientY];
-    var realpos = this.getrealpos(ev.clientX, ev.clientY, true);
-    switch (ev.button) {
-      case 0:
-        switch (this.currenttool) {
-          case 'pointer':
-            var closest = this.getclosestwall(realpos, 1);
-            if (closest) {
-            } else {
-              this.drawing = new elation.floorplan.selector({start: realpos});
-            }
-            this.dirty = true;
-            break;
-          case 'wall':
-            this.drawing = new elation.floorplan.wall({start: realpos});
-            this.dirty = true;
-            break;
-        }
-        ev.preventDefault();
-        break;
-      case 1: // middle button
-        this.dragging = mousepos;
-        ev.preventDefault();
-        break;
-    }
-    this.render();
-    // event swap
-    elation.events.remove(this.canvas, 'mousemove,mouseup', this);
-    elation.events.add(window, 'mousemove,mouseup', this);
-  }
-  this.mousemove = function(ev) {
-    var mousepos = [ev.clientX, ev.clientY];
-    var realpos = this.getrealpos(ev.clientX, ev.clientY, true);
-    switch (this.currenttool) {
-      case 'pointer':
-        if (this.hoveritems && this.hoveritems.length > 0) {
-          for (var i = 0; i < this.hoveritems.length; i++) {
-            this.hoveritems[i].sethover(false);
-          }
-          this.setdirty();
-        }
-        if (this.drawing) {
-          this.drawing.setend(realpos);
-          var picked = this.getobjectsinrange(this.drawing.start, this.drawing.end);
-          this.hoveritems = picked;
-          for (var i = 0; i < this.hoveritems.length; i++) {
-            this.hoveritems[i].sethover(true);
-          }
-          this.setdirty();
-        } else {
-          var closest = this.getclosestwall(realpos, 1);
-          if (closest) {
-            elation.html.addclass(this.canvas, 'state_grabbable');
-            closest[0].sethover(true);
-            this.hoveritems = [closest[0]];
-            this.setdirty();
-          } else {
-            elation.html.removeclass(this.canvas, 'state_grabbable');
-            this.hoveritems = [];
-          }
-        }
-        break;
-      case 'wall':
-        if (this.drawing) {
-          this.drawing.setend(realpos);
-          this.dirty = true;
-        }
-        break;
-      case 'door':
-      case 'window':
-        if (!this.drawing || !(this.drawing instanceof elation.floorplan[this.currenttool])) {
-          this.drawing = new elation.floorplan[this.currenttool]({position: realpos});
-        }
-        var closest = this.getclosestwall(realpos, (this.currenttool == 'door' ? 2 : 1));
-        if (closest) {
-          this.drawing.enable();
-          this.drawing.setwallposition(closest[0], closest[1], closest[2]);
-          this.dirty = true;
-        } else{
-          this.drawing.disable();
-          this.drawing.setposition(realpos);
-          this.dirty = true;
-        }
-        break;
-    }
-    if (this.dragging) {
-      var diff = [mousepos[0] - this.dragging[0], mousepos[1] - this.dragging[1]];
-      this.offset = [this.offset[0] + diff[0] / this.scale, this.offset[1] + diff[1] / this.scale];
-      this.dragging = mousepos;
-      this.dirty = true;
-    }
-    this.render();
-  }
-  this.mouseup = function(ev) {
-    var realpos = this.getrealpos(ev.clientX, ev.clientY, true);
-    switch (ev.button) {
-      case 0:
-        switch (this.currenttool) {
-          case 'pointer':
-            if (this.drawing) {
-              this.drawing = false;
-              this.dirty = true;
-            } else {
-              var closest = this.getclosestwall(realpos, 1);
-              if (closest) {
-                closest[0].setselected(true);
-                this.dirty = true;
-              }
-            }
-            break;
-          case 'wall':
-            if (this.drawing) {
-              if (this.drawing.length() > 0) {
-                this.walls.push(this.drawing);
-              }
-              this.drawing = false;
-              this.dirty = true;
-              this.savestate();
-            }
-            break;
-          case 'door':
-            if (this.drawing && this.drawing.enabled) {
-              this.doors.push(this.drawing);
-              this.drawing = false;
-              this.dirty = true;
-              this.savestate();
-            }
-            break;
-          case 'window':
-            if (this.drawing && this.drawing.enabled) {
-              this.windows.push(this.drawing);
-              this.drawing = false;
-              this.dirty = true;
-              this.savestate();
-            }
-            break;
-        }
-        break;
-      case 1: // middle button
-        this.dragging = false;
-        this.dirty = true;
-        break;
-    }
-    if (this.dirty) {
-    }
-    this.render();
-    // reverse event swap
-    elation.events.remove(window, 'mousemove,mouseup', this);
-    elation.events.add(this.canvas, 'mousemove,mouseup', this);
   }
   this.mousewheel = function(ev) {
     var mult = (ev.wheelDeltaY > 0 ? 1.1 : .9);
