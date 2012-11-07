@@ -205,6 +205,7 @@ elation.extend("floorplan.things.door", function(args) {
   this.thickness = 3.75/12;
   this.enabled = false;
   this.exterior = false;
+  this.direction = 'right';
   this.angle = 0;
   this.active = false;
   this.hover = false;
@@ -253,7 +254,14 @@ elation.extend("floorplan.things.door", function(args) {
     return elation.graphics.test.circle_rectangle(circle, rect);
   }
   this.getclosestpoint = function(point) {
-    return false;
+    // FIXME - needs to account for angle and use offset selection circle like we do above
+    return point.clone().subSelf(this.position).normalize().multiplyScalar(this.width / 2).addSelf(this.position);
+  }
+  this.getside = function(point) {
+    // FIXME - doesn't work...
+    var perp = new THREE.Vector3().sub(this.position, point).crossSelf(new THREE.Vector3(0,1,0)).normalize();
+    var cosa = point.clone().subSelf(this.position).dot(perp);
+    return (cosa < this.angle);
   }
   this.serialize = function(asobj) {
     var data = {
@@ -263,6 +271,7 @@ elation.extend("floorplan.things.door", function(args) {
       thickness: this.thickness,
       exterior: this.exterior,
       angle: this.angle,
+      direction: this.direction,
       enabled: this.enabled
     };
     return (asobj ? data : elation.JSON.stringify(data));;
@@ -290,9 +299,15 @@ elation.extend("floorplan.things.door", function(args) {
       parent.setstyle(parent.style['door']);
     }
     ctx.beginPath();
-    ctx.moveTo(-halfwidth, offset);
-    ctx.lineTo(-halfwidth, width + offset);
-    ctx.arcTo(halfwidth, width + offset, halfwidth, offset, width);
+    if (this.direction == 'right') {
+      ctx.moveTo(-halfwidth, offset);
+      ctx.lineTo(-halfwidth, width + offset);
+      ctx.arcTo(halfwidth, width + offset, halfwidth, offset, width);
+    } else if (this.direction == 'left') {
+      ctx.moveTo(halfwidth, offset);
+      ctx.lineTo(halfwidth, width + offset);
+      ctx.arcTo(-halfwidth, width + offset, -halfwidth, offset, width);
+    }
     ctx.stroke();
     ctx.fill();
     ctx.restore();

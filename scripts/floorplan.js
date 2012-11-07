@@ -251,7 +251,7 @@ elation.component.add('floorplan', function() {
       
     }
 */
-    //console.log('potential walls(' + distances.length + '):', distances);
+    //console.log('potential walls(' + distances.length + '):', distances, minidx);
     if (minidx && this.objects[minidx] && potentialpoints[minidx]) {
       var side = this.objects[minidx].getside(point);
       return [this.objects[minidx], potentialpoints[minidx], side];
@@ -334,7 +334,6 @@ elation.component.add('floorplan', function() {
     ev.preventDefault();
   }
   this.keydown = function(ev) {
-console.log(ev.keyCode);
     switch (ev.keyCode) {
       case 27: // esc
         if (this.drawing) {
@@ -375,7 +374,6 @@ console.log(ev.keyCode);
   }
   this.resize = function(ev) {
     this.size = [window.innerWidth, window.innerHeight];
-    this.dirty = true;
-    this.render();
+    this.setdirty();
   }
 });

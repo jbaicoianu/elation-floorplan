@@ -207,6 +207,7 @@ elation.extend("floorplan.tools.door", function() {
     var mousepos = [ev.clientX, ev.clientY];
     var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
     if (ev.button == 0) {
+      this.dragging = realpos;
     }
   }
   this.mousemove = function(ev) {
@@ -219,15 +220,26 @@ elation.extend("floorplan.tools.door", function() {
     if (!floorplan.drawing || !(floorplan.drawing instanceof elation.floorplan.things[floorplan.currenttool])) {
       floorplan.drawing = new elation.floorplan.things[floorplan.currenttool]({position: realpos});
     }
-    var closest = floorplan.getclosestobject(realpos, (floorplan.currenttool == 'door' ? 2 : 1));
-    if (closest) {
-      floorplan.drawing.enable();
-      floorplan.drawing.setwallposition(closest[0], closest[1], closest[2]);
+    if (this.dragging) {
+      var dragdiff = realpos.clone().subSelf(this.dragging);
+      if (dragdiff.x < 0) {
+        floorplan.drawing.direction = 'left';
+      } else {
+        floorplan.drawing.direction = 'right';
+      }
+      console.log(dragdiff, realpos, this.dragging);
       floorplan.setdirty();
-    } else{
-      floorplan.drawing.disable();
-      floorplan.drawing.setposition(realpos);
-      floorplan.setdirty();
+    } else {
+      var closest = floorplan.getclosestobject(realpos, (floorplan.currenttool == 'door' ? 2 : 1));
+      if (closest) {
+        floorplan.drawing.enable();
+        floorplan.drawing.setwallposition(closest[0], closest[1], closest[2]);
+        floorplan.setdirty();
+      } else{
+        floorplan.drawing.disable();
+        floorplan.drawing.setposition(realpos);
+        floorplan.setdirty();
+      }
     }
   }
   this.mouseup = function(ev) {
@@ -242,6 +254,9 @@ elation.extend("floorplan.tools.door", function() {
       floorplan.drawing = false;
       floorplan.setdirty();
       floorplan.savestate();
+    }
+    if (this.dragging) {
+      this.dragging = false;
     }
   }
 });
