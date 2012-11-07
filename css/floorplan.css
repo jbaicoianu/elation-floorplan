@@ -1,0 +1,31 @@
+body,html {
+  padding: 0;
+  margin: 0;
+}
+.floorplan_canvas {
+  margin: 0;
+  padding: 0;
+}
+.floorplan_canvas.state_grabbable {
+  cursor: pointer; 
+}
+.floorplan_toolbox {
+  max-width: 6.6em;
+  position: fixed;
+  top: 2em;
+  left: 2em;
+  border: 1px solid black;
+  background: rgba(255,255,255,.5);
+  border-radius: 5px;
+  box-shadow: 2px 2px 10px rgba(0,0,0,.5);
+}
+.floorplan_toolbox .ui_toolbox_tool {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  text-align: center;
+  padding: 0;
+  font-size: .8em;
+  vertical-align: top;
+  margin: .1em;
+}
