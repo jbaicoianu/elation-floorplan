@@ -229,7 +229,7 @@ elation.component.add('floorplan', function() {
     }
     return new THREE.Vector3(realpos[0], 0, realpos[1]);
   }
-  this.getclosestobject = function(point, radius) {
+  this.getclosestobject = function(point, radius, type) {
     var distances = [];
     var potentialpoints = [];
     var minidx = false;
@@ -237,7 +237,7 @@ elation.component.add('floorplan', function() {
       potentialpoints[k] = this.objects[k].getclosestpoint(point);
       if (potentialpoints[k]) {
         var len = potentialpoints[k].distanceTo(point);
-        if (len < radius) {
+        if ((!type || type == this.objects[k].type) && len < radius) {
           distances[k] = len;
           if (!minidx || len < distances[minidx]) {
             minidx = k;
@@ -253,8 +253,8 @@ elation.component.add('floorplan', function() {
 */
     //console.log('potential walls(' + distances.length + '):', distances, minidx);
     if (minidx && this.objects[minidx] && potentialpoints[minidx]) {
-      var side = this.objects[minidx].getside(point);
-      return [this.objects[minidx], potentialpoints[minidx], side];
+      var quadrant = this.objects[minidx].getquadrant(point);
+      return [this.objects[minidx], potentialpoints[minidx], quadrant];
     }
     return false;
   }

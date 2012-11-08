@@ -222,18 +222,15 @@ elation.extend("floorplan.tools.door", function() {
     }
     if (this.dragging) {
       var dragdiff = realpos.clone().subSelf(this.dragging);
-      if (dragdiff.x < 0) {
-        floorplan.drawing.direction = 'left';
-      } else {
-        floorplan.drawing.direction = 'right';
-      }
-      console.log(dragdiff, realpos, this.dragging);
+      var quadrant = floorplan.drawing.getquadrant(realpos);
+      floorplan.drawing.exterior = (quadrant[1] < 0);
+      floorplan.drawing.direction = ((floorplan.drawing.exterior && quadrant[0] < 0) || (!floorplan.drawing.exterior && quadrant[0] >= 0) ? 'left' : 'right');
       floorplan.setdirty();
     } else {
-      var closest = floorplan.getclosestobject(realpos, (floorplan.currenttool == 'door' ? 2 : 1));
-      if (closest) {
+      var closest = floorplan.getclosestobject(realpos, 1);
+      if (closest && closest[0].type == 'wall') {
         floorplan.drawing.enable();
-        floorplan.drawing.setwallposition(closest[0], closest[1], closest[2]);
+        floorplan.drawing.setwallposition(closest[0], closest[1], closest[2][0]);
         floorplan.setdirty();
       } else{
         floorplan.drawing.disable();

@@ -68,11 +68,11 @@ elation.extend("floorplan.things.wall", function(args) {
       return dir.multiplyScalar(projdist).addSelf(this.start);
     }
   }
-  this.getside = function(point) {
+  this.getquadrant = function(point) {
     var diff = this.end.clone().subSelf(this.start).normalize();
     var perp = new THREE.Vector3().cross(diff, new THREE.Vector3(0,1,0)).normalize();
     var cosa = point.clone().subSelf(this.start).dot(perp);
-    return (cosa < 0);
+    return [(cosa < 0 ? -1 : 1), (cosa < 0 ? -1 : 1)];
   }
   this.getangle = function(from) {
     if (typeof from == 'undefined') {
@@ -254,14 +254,28 @@ elation.extend("floorplan.things.door", function(args) {
     return elation.graphics.test.circle_rectangle(circle, rect);
   }
   this.getclosestpoint = function(point) {
-    // FIXME - needs to account for angle and use offset selection circle like we do above
-    return point.clone().subSelf(this.position).normalize().multiplyScalar(this.width / 2).addSelf(this.position);
+    var center = this.position.clone();
+    var halfwidth = this.width / 2;
+    if (this.exterior) {
+      center.x += Math.sin(this.angle) * halfwidth;
+      center.z -= Math.cos(this.angle) * halfwidth;
+    } else {
+      center.x -= Math.sin(this.angle) * halfwidth;
+      center.z += Math.cos(this.angle) * halfwidth;
+    }
+    return point.clone().subSelf(center).normalize().multiplyScalar(halfwidth / 2).addSelf(center);
   }
-  this.getside = function(point) {
-    // FIXME - doesn't work...
-    var perp = new THREE.Vector3().sub(this.position, point).crossSelf(new THREE.Vector3(0,1,0)).normalize();
-    var cosa = point.clone().subSelf(this.position).dot(perp);
-    return (cosa < this.angle);
+  this.getquadrant = function(point) {
+    var perp = new THREE.Vector3(Math.cos(this.angle), 0, Math.sin(this.angle));
+    var relpos = point.clone().subSelf(this.position);
+    var dot = relpos.dot(perp);
+    var left = dot < 0;
+
+    perp.set(Math.cos(this.angle + Math.PI/2), 0, Math.sin(this.angle + Math.PI/2));
+    dot = relpos.dot(perp);
+    var bottom = dot < 0;
+
+    return [(left ? -1 : 1), (bottom ? -1 : 1)];
   }
   this.serialize = function(asobj) {
     var data = {
@@ -363,6 +377,18 @@ elation.extend("floorplan.things.window", function(args) {
   }
   this.getclosestpoint = function(point) {
     return false;
+  }
+  this.getquadrant = function(point) {
+    var perp = new THREE.Vector3(Math.cos(this.angle), 0, Math.sin(this.angle));
+    var relpos = point.clone().subSelf(this.position);
+    var dot = relpos.dot(perp);
+    var left = dot < 0;
+
+    perp.set(Math.cos(this.angle + Math.PI/2), 0, Math.sin(this.angle + Math.PI/2));
+    dot = relpos.dot(perp);
+    var bottom = dot < 0;
+
+    return [(left ? -1 : 1), (bottom ? -1 : 1)];
   }
   this.enable = function() {
     this.enabled = true;
