@@ -1,11 +1,13 @@
 elation.extend("floorplan.tools.drag", function() {
   this.attach = function(floorplan) {
+    console.log('attach drag');
     this.floorplan = floorplan;
-    elation.events.add(floorplan.container, 'mousedown,mousemove,mouseup', this);
+    elation.events.add(floorplan.canvas, 'mousedown,mousemove,mouseup', this);
   }
   this.detach = function() {
     if (this.floorplan) {
-      elation.events.remove(this.floorplan.container, 'mousedown,mousemove,mouseup', this);
+      console.log('detach drag');
+      elation.events.remove(this.floorplan.canvas, 'mousedown,mousemove,mouseup', this);
       this.floorplan = false;
     }
   }
@@ -14,6 +16,7 @@ elation.extend("floorplan.tools.drag", function() {
     var floorplan = this.floorplan;
     if (!floorplan) return;
 
+console.log('drag',ev.type,ev);
     var mousepos = [ev.clientX, ev.clientY];
     var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
     if (ev.button == 1) {
@@ -26,6 +29,7 @@ elation.extend("floorplan.tools.drag", function() {
     var floorplan = this.floorplan;
     if (!floorplan) return;
 
+console.log('drag',ev.type,ev);
     var mousepos = [ev.clientX, ev.clientY];
     var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
 
@@ -40,6 +44,7 @@ elation.extend("floorplan.tools.drag", function() {
     var floorplan = this.floorplan;
     if (!floorplan) return;
 
+console.log('drag',ev.type,ev);
     var mousepos = [ev.clientX, ev.clientY];
     var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
 
@@ -139,11 +144,11 @@ console.log('detach pointer');
 elation.extend("floorplan.tools.wall", function() {
   this.attach = function(floorplan) {
     this.floorplan = floorplan;
-    elation.events.add(floorplan.container, 'mousedown,mousemove,mouseup', this);
+    elation.events.add(floorplan.canvas, 'mousedown,mousemove,mouseup', this);
   }
   this.detach = function() {
     if (this.floorplan) {
-      elation.events.remove(this.floorplan.container, 'mousedown,mousemove,mouseup', this);
+      elation.events.remove(this.floorplan.canvas, 'mousedown,mousemove,mouseup', this);
       this.floorplan = false;
     }
   }
@@ -178,6 +183,7 @@ elation.extend("floorplan.tools.wall", function() {
     var mousepos = [ev.clientX, ev.clientY];
     var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
 
+console.log('aaa');
     if (floorplan.drawing) {
       if (floorplan.drawing.length() > 0) {
         floorplan.objects.push(floorplan.drawing);
@@ -191,11 +197,11 @@ elation.extend("floorplan.tools.wall", function() {
 elation.extend("floorplan.tools.door", function() {
   this.attach = function(floorplan) {
     this.floorplan = floorplan;
-    elation.events.add(floorplan.container, 'mousedown,mousemove,mouseup', this);
+    elation.events.add(floorplan.canvas, 'mousedown,mousemove,mouseup', this);
   }
   this.detach = function() {
     if (this.floorplan) {
-      elation.events.remove(this.floorplan.container, 'mousedown,mousemove,mouseup', this);
+      elation.events.remove(this.floorplan.canvas, 'mousedown,mousemove,mouseup', this);
       this.floorplan = false;
     }
   }
@@ -220,17 +226,18 @@ elation.extend("floorplan.tools.door", function() {
     if (!floorplan.drawing || !(floorplan.drawing instanceof elation.floorplan.things[floorplan.currenttool])) {
       floorplan.drawing = new elation.floorplan.things[floorplan.currenttool]({position: realpos});
     }
+    var quadrant = floorplan.drawing.getquadrant(realpos);
     if (this.dragging) {
       var dragdiff = realpos.clone().subSelf(this.dragging);
-      var quadrant = floorplan.drawing.getquadrant(realpos);
-      floorplan.drawing.exterior = (quadrant[1] < 0);
       floorplan.drawing.direction = ((floorplan.drawing.exterior && quadrant[0] < 0) || (!floorplan.drawing.exterior && quadrant[0] >= 0) ? 'left' : 'right');
+      floorplan.drawing.exterior = (quadrant[1] < 0);
       floorplan.setdirty();
     } else {
       var closest = floorplan.getclosestobject(realpos, 1);
       if (closest && closest[0].type == 'wall') {
         floorplan.drawing.enable();
         floorplan.drawing.setwallposition(closest[0], closest[1], closest[2][0]);
+        floorplan.drawing.exterior = (quadrant[1] < 0);
         floorplan.setdirty();
       } else{
         floorplan.drawing.disable();
@@ -260,11 +267,11 @@ elation.extend("floorplan.tools.door", function() {
 elation.extend("floorplan.tools.window", function() {
   this.attach = function(floorplan) {
     this.floorplan = floorplan;
-    elation.events.add(floorplan.container, 'mousedown,mousemove,mouseup', this);
+    elation.events.add(floorplan.canvas, 'mousedown,mousemove,mouseup', this);
   }
   this.detach = function() {
     if (this.floorplan) {
-      elation.events.remove(this.floorplan.container, 'mousedown,mousemove,mouseup', this);
+      elation.events.remove(this.floorplan.canvas, 'mousedown,mousemove,mouseup', this);
       this.floorplan = false;
     }
   }
@@ -311,5 +318,56 @@ elation.extend("floorplan.tools.window", function() {
       floorplan.setdirty();
       floorplan.savestate();
     }
+  }
+});
+elation.extend("floorplan.tools.outlet", function() {
+  this.attach = function(floorplan) {
+    this.floorplan = floorplan;
+    elation.events.add(floorplan.canvas, 'mousedown,mousemove,mouseup', this);
+  }
+  this.detach = function() {
+    if (this.floorplan) {
+      elation.events.remove(this.floorplan.canvas, 'mousedown,mousemove,mouseup', this);
+      this.floorplan = false;
+    }
+  }
+  this.handleEvent = function(ev) { if (typeof this[ev.type] == 'function') return this[ev.type](ev); }
+  this.mousedown = function(ev) {
+    var floorplan = this.floorplan;
+    if (!floorplan) return;
+
+    var mousepos = [ev.clientX, ev.clientY];
+    var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
+
+  }
+  this.mousemove = function(ev) {
+    var floorplan = this.floorplan;
+    if (!floorplan) return;
+
+    var mousepos = [ev.clientX, ev.clientY];
+    var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
+
+    if (!floorplan.drawing || !(floorplan.drawing instanceof elation.floorplan.things[floorplan.currenttool])) {
+      floorplan.drawing = new elation.floorplan.things[floorplan.currenttool]({position: realpos});
+    }
+    var quadrant = floorplan.drawing.getquadrant(realpos);
+    var closest = floorplan.getclosestobject(realpos, 2);
+    if (closest) {
+      floorplan.drawing.enable();
+      floorplan.drawing.setwallposition(closest[0], closest[1], closest[2]);
+      floorplan.setdirty();
+    } else{
+      floorplan.drawing.disable();
+      floorplan.drawing.setposition(realpos);
+      floorplan.setdirty();
+    }
+  }
+  this.mouseup = function(ev) {
+    var floorplan = this.floorplan;
+    if (!floorplan) return;
+
+    var mousepos = [ev.clientX, ev.clientY];
+    var realpos = floorplan.getrealpos(ev.clientX, ev.clientY, true);
+
   }
 });

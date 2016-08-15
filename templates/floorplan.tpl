@@ -7,5 +7,5 @@
 {dependency name="floorplan.tools"}
 {dependency name="floorplan.things"}
 {dependency name="space.three"}
-<div elation:component="floorplan"></div>
+<div data-elation-component="floorplan"></div>
 {set var="page.title"}Floorplan Editor{/set}

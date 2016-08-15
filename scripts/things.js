@@ -517,3 +517,113 @@ elation.extend("floorplan.things.selector", function(args) {
   this.init();
 });
 
+elation.extend("floorplan.things.outlet", function(args) {
+  this.type = 'window';
+  this.position = new THREE.Vector3();
+  this.width = 1;//3.75 / 12;
+  this.enabled = false;
+  this.angle = 0;
+  this._tmpvec  = new THREE.Vector3();
+
+  this.init = function() {
+    this.load(args);
+  }
+  this.load = function(args) {
+    for (var k in args) {
+      if (k == 'position') {
+        this.setposition(args[k]);
+      } else {
+        this[k] = args[k];
+      }
+    }
+  }
+
+  this.setposition = function(pos) {
+    if (pos instanceof THREE.Vector3) {
+      this.position.copy(pos);
+    } else {
+      this.position.set(pos[0], pos[1], pos[2]);
+    }
+  }
+  this.setwallposition = function(wall, pos, exterior) {
+    this.angle = wall.getangle();
+    this.setposition(pos);
+    this.exterior = exterior || false;;
+  }
+  this.sethover = function(hover) {
+    this.hover = hover;
+  }
+  this.setselected = function(selected) {
+    this.selected = selected;
+  }
+  this.isin = function(rect) {
+    var circle = new elation.graphics.test.circle([this.position.x, this.position.z], this.width/2);
+    return elation.graphics.test.circle_rectangle(circle, rect);
+  }
+  this.getclosestpoint = function(point) {
+    return false;
+  }
+  this.getquadrant = function(point) {
+    var perp = new THREE.Vector3(Math.cos(this.angle), 0, Math.sin(this.angle));
+    var relpos = point.clone().subSelf(this.position);
+    var dot = relpos.dot(perp);
+    var left = dot < 0;
+
+    perp.set(Math.cos(this.angle + Math.PI/2), 0, Math.sin(this.angle + Math.PI/2));
+    dot = relpos.dot(perp);
+    var bottom = dot < 0;
+
+    return [(left ? -1 : 1), (bottom ? -1 : 1)];
+  }
+  this.enable = function() {
+    this.enabled = true;
+  }
+  this.disable = function() {
+    this.enabled = false;
+  }
+  this.serialize = function(asobj) {
+    var data = {
+      type: this.type,
+      position: [this.position.x, this.position.y, this.position.z],
+      width: this.width,
+      angle: this.angle,
+      enabled: this.enabled
+    };
+    return (asobj ? data : elation.JSON.stringify(data));;
+  }
+  this.render = function(parent) {
+    var ctx = parent.ctx;
+  
+    var canvaspos = parent.getcanvaspos(this.position);
+    ctx.save();
+    ctx.translate(canvaspos.x, canvaspos.z);
+    ctx.rotate((this.exterior ? this.angle + Math.PI : this.angle));
+//console.log(this.angle);
+    var width = this.width * parent.scale;
+    var halfwidth = width / 2;
+    var padding = 2;
+    var offset = (this.exterior ? -halfwidth : halfwidth)*2;
+    if (this.selected) {
+      parent.setstyle(parent.style['selected']);
+    } else if (this.hover) {
+      parent.setstyle(parent.style['hover']);
+    } else {
+      parent.setstyle(parent.style['outlet']);
+    }
+    //ctx.fillRect(-halfwidth, -padding + offset, width, thickness + padding * 2);
+    ctx.strokeStyle = (this.enabled ? parent.style['outlet'][1] : '#ff0000');
+    ctx.beginPath();
+
+    ctx.arc(0,offset,halfwidth,0,2*Math.PI,false);
+    //ctx.fill();
+
+    var fuh = halfwidth*.8;
+    ctx.moveTo(-fuh, -fuh*.75+offset);
+    ctx.lineTo(-fuh, 0);
+    ctx.moveTo(fuh, -fuh*.75+offset);
+    ctx.lineTo(fuh, 0);
+    ctx.stroke();
+    ctx.restore();
+  }
+  this.init();
+});
